@@ -3,11 +3,11 @@ package com.lords.server.auth.service;
 import com.lords.server.auth.dto.request.LoginRequest;
 import com.lords.server.auth.dto.request.RegisterRequest;
 import com.lords.server.auth.dto.response.AuthResponse;
-import com.lords.server.auth.dto.response.LoginResponse;
 import com.lords.server.auth.dto.response.UserDetailsResponse;
 import com.lords.server.auth.entity.RefreshToken;
 import com.lords.server.auth.entity.User;
 import com.lords.server.auth.repository.UserRepository;
+import com.lords.server.exception.custom.ResourceNotFoundException;
 import com.lords.server.security.JwtUtil;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -46,7 +46,7 @@ public class AuthService {
     public AuthResponse loginUser(LoginRequest request) {
 
         User user = userRepository.findByUsername(request.username())
-                .orElseThrow(() -> new IllegalStateException("Invalid username."));
+                .orElseThrow(() -> new ResourceNotFoundException("Invalid username."));
 
         if(!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new IllegalStateException("Invalid password.");
@@ -79,7 +79,7 @@ public class AuthService {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         return new UserDetailsResponse(user.getId(), user.getUsername());
     }

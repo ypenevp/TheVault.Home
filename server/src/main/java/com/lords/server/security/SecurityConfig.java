@@ -2,6 +2,7 @@ package com.lords.server.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -37,6 +38,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/refresh").permitAll()
                         .anyRequest().authenticated()
                 )
+                .exceptionHandling()
+                .authenticationEntryPoint((req, res, ex) -> {
+                    res.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    res.setContentType("application/json");
+                    res.getWriter().write("""
+                    {"status":401,"error":"Unauthorized","message":"Authentication required"}
+                    """);
+                })
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
