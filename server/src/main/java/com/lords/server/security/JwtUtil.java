@@ -53,12 +53,4 @@ public class JwtUtil {
         return getTokenClaims(token).getSubject();
     }
 
-    public boolean isJwtValid(String token) {
-        try {
-            getTokenClaims(token);
-            return true;
-        } catch (JwtException e) {
-            return false;
-        }
-    }
 }
