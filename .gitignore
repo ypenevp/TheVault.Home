@@ -3,6 +3,7 @@
 
 *.env
 *.gradle
+uploads/
 
 
 **/build/
