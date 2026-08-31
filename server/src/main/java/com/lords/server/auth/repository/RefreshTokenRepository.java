@@ -1,6 +1,7 @@
 package com.lords.server.auth.repository;
 
 import com.lords.server.auth.entity.RefreshToken;
+import com.lords.server.auth.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.Instant;
@@ -8,7 +9,7 @@ import java.util.Optional;
 
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
     Optional<RefreshToken> findByToken(String token);
-    Optional<RefreshToken> findByUsername(String username);
+    Optional<RefreshToken> findByUser(User user);
     void deleteAllByExpiresAtBefore(Instant time);
 
 }

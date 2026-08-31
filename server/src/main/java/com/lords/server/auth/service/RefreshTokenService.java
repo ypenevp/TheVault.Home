@@ -1,6 +1,7 @@
 package com.lords.server.auth.service;
 
 import com.lords.server.auth.entity.RefreshToken;
+import com.lords.server.auth.entity.User;
 import com.lords.server.auth.repository.RefreshTokenRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,9 +23,9 @@ public class RefreshTokenService {
     public RefreshTokenService(RefreshTokenRepository repository) {
         this.repository = repository;
     }
+    public RefreshToken create(User user) {
 
-    public RefreshToken create(String username) {
-        Optional<RefreshToken> existingToken = repository.findByUsername(username);
+        Optional<RefreshToken> existingToken = repository.findByUser(user);
 
         if (existingToken.isPresent()) {
             RefreshToken token = existingToken.get();
@@ -34,7 +35,7 @@ public class RefreshTokenService {
         }
 
         RefreshToken newToken = new RefreshToken();
-        newToken.setUsername(username);
+        newToken.setUser(user);
         newToken.setToken(UUID.randomUUID().toString());
         newToken.setExpiresAt(Instant.now().plus(Duration.ofDays(tokenExpiresDays)));
         return repository.save(newToken);
@@ -49,7 +50,8 @@ public class RefreshTokenService {
             throw new RuntimeException("Refresh token expired");
         }
 
-        return refreshToken.getUsername();
+        return refreshToken.getUser().getUsername();
+
     }
 
     public void deleteToken(String token) {
