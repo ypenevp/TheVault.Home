@@ -1,5 +1,6 @@
 package com.lords.server.exception;
 
+import com.lords.server.exception.custom.AccessDeniedException;
 import com.lords.server.exception.custom.DuplicateResourceException;
 import com.lords.server.exception.custom.ResourceNotFoundException;
 import com.lords.server.exception.dto.GeneralErrorResponse;
@@ -86,8 +87,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
-    public ResponseEntity<GeneralErrorResponse> handleAuthentication(AuthenticationException ex,
-                                                                     HttpServletRequest req) {
+    public ResponseEntity<GeneralErrorResponse> handleAuthentication(AuthenticationException ex, HttpServletRequest req) {
 
         log.warn("Authentication failed: {}", ex.getMessage());
 
@@ -102,5 +102,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
-
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<GeneralErrorResponse> handleAccessDenied(AccessDeniedException ex, HttpServletRequest req) {
+        log.warn("Access denied: {}", ex.getMessage());
+        return buildError(HttpStatus.FORBIDDEN, ex.getMessage(), req.getRequestURI());
+    }
 }
