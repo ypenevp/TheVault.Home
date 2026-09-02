@@ -9,7 +9,13 @@ import com.lords.server.home.entity.Home;
 import com.lords.server.home.entity.HomeMember;
 import com.lords.server.home.repository.HomeMemberRepository;
 import com.lords.server.home.repository.HomeRepository;
+import com.lords.server.media.dto.response.MediaResponse;
+import com.lords.server.media.entity.Media;
+import com.lords.server.media.repository.MediaRepository;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class HomeService {
@@ -19,10 +25,13 @@ public class HomeService {
 
     private final HomeMemberRepository homeMemberRepository;
 
-    public HomeService(HomeRepository homeRepository, UserRepository userRepository,  HomeMemberRepository homeMemberRepository) {
+    private final MediaRepository mediaRepository;
+
+    public HomeService(HomeRepository homeRepository, UserRepository userRepository,  HomeMemberRepository homeMemberRepository,  MediaRepository mediaRepository) {
         this.homeRepository = homeRepository;
         this.userRepository = userRepository;
         this.homeMemberRepository = homeMemberRepository;
+        this.mediaRepository = mediaRepository;
     }
 
     public Home createHome(String name, Long ownerId) {
@@ -89,4 +98,23 @@ public class HomeService {
         homeMemberRepository.delete(delCurrent);
     }
 
+    public List<MediaResponse> getMedia(Long homeId, Long currentUserId) {
+        Home home = homeRepository.findById(homeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!home.getOwner().getId().equals(currentUser.getId()) && !homeMemberRepository.existsByHomeAndUser(home, currentUser)) {
+            throw new AccessDeniedException("You don't have permission to view media in this home");
+        }
+
+        List<Media> media = mediaRepository.findAllByHome(home)
+                .orElseThrow(() -> new ResourceNotFoundException("Media not found"));
+
+        return media.stream()
+                .map(MediaResponse::from)
+                .toList();
+    }
 }
+
+

@@ -8,11 +8,16 @@ import com.lords.server.home.dto.request.CreateHomeRequest;
 import com.lords.server.home.entity.Home;
 import com.lords.server.home.service.HomeService;
 
+import com.lords.server.media.dto.response.MediaResponse;
+import com.lords.server.media.entity.Media;
 import com.lords.server.security.JwtUtil;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.w3c.dom.stylesheets.LinkStyle;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/home")
@@ -57,5 +62,15 @@ public class HomeController {
 
         homeService.kickMember(homeId, currentUser.getId(), request.username());
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @GetMapping("/{homeId}")
+    public ResponseEntity<List<MediaResponse>> getMedian(@PathVariable Long homeId, @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        String currentUsername = jwtUtil.extractUsername(token);
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        List<MediaResponse> response = homeService.getMedia(homeId, currentUser.getId());
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }
