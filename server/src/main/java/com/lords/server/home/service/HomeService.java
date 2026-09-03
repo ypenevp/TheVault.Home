@@ -5,6 +5,8 @@ import com.lords.server.auth.repository.UserRepository;
 import com.lords.server.exception.custom.AccessDeniedException;
 import com.lords.server.exception.custom.DuplicateResourceException;
 import com.lords.server.exception.custom.ResourceNotFoundException;
+import com.lords.server.home.dto.request.HomeUpdateRequest;
+import com.lords.server.home.dto.response.HomeResponse;
 import com.lords.server.home.entity.Home;
 import com.lords.server.home.entity.HomeMember;
 import com.lords.server.home.repository.HomeMemberRepository;
@@ -34,7 +36,7 @@ public class HomeService {
         this.mediaRepository = mediaRepository;
     }
 
-    public Home createHome(String name, Long ownerId) {
+    public HomeResponse createHome(String name, Long ownerId) {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Owner not found"));
 
@@ -43,9 +45,35 @@ public class HomeService {
         home.setOwner(owner);
         home.setTotalSizeInBytes(0L);
 
-        return homeRepository.save(home);
+        Home saved = homeRepository.save(home);
+
+        return new HomeResponse(
+                saved.getId(),
+                saved.getName(),
+                saved.getOwner().getUsername(),
+                saved.getTotalSizeInBytes()
+        );
     }
 
+    public HomeResponse updateHome(Long homeId, Long currentUserId, HomeUpdateRequest request) {
+        Home home = homeRepository.findById(homeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!home.getOwner().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("You don't have permission to edit this home");
+        }
+
+        home.setName(request.name());
+        Home saved = homeRepository.save(home);
+        return new HomeResponse(
+                saved.getId(),
+                saved.getName(),
+                saved.getOwner().getUsername(),
+                saved.getTotalSizeInBytes()
+        );
+    }
     public void addMember(Long homeId, Long currentUserId, String usernameToAdd) {
 
         Home home = homeRepository.findById(homeId)
@@ -114,6 +142,30 @@ public class HomeService {
         return media.stream()
                 .map(MediaResponse::from)
                 .toList();
+    }
+
+    public void changeOwner(Long homeId, Long currentUserId, String newOwnerUsername) {
+        Home home = homeRepository.findById(homeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (!home.getOwner().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("Only the current owner can transfer ownership");
+        }
+
+        User newOwner = userRepository.findByUsername(newOwnerUsername).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if(homeMemberRepository.existsByHomeAndUser(home, newOwner)) {
+            HomeMember newOwnerMember = homeMemberRepository.findByHomeAndUser(home,newOwner).orElseThrow(() -> new ResourceNotFoundException("Member not found"));
+            homeMemberRepository.delete(newOwnerMember);
+        }
+        home.setOwner(newOwner);
+        homeRepository.save(home);
+
+        HomeMember member = new HomeMember();
+        member.setHome(home);
+        member.setUser(currentUser);
+        homeMemberRepository.save(member);
     }
 }
 

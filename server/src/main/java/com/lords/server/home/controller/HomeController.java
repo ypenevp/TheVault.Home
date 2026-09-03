@@ -3,8 +3,10 @@ package com.lords.server.home.controller;
 import com.lords.server.auth.entity.User;
 import com.lords.server.auth.repository.UserRepository;
 import com.lords.server.exception.custom.ResourceNotFoundException;
+import com.lords.server.home.dto.request.HomeUpdateRequest;
 import com.lords.server.home.dto.request.ManageMemberRequest;
 import com.lords.server.home.dto.request.CreateHomeRequest;
+import com.lords.server.home.dto.response.HomeResponse;
 import com.lords.server.home.entity.Home;
 import com.lords.server.home.service.HomeService;
 
@@ -32,14 +34,23 @@ public class HomeController {
         this.userRepository = userRepository;
     }
 
-    @PostMapping("/create")
-    public ResponseEntity<Home> create(@Valid @RequestBody CreateHomeRequest request, @RequestHeader("Authorization") String authHeader) {
+    @PostMapping
+    public ResponseEntity<HomeResponse> create(@Valid @RequestBody CreateHomeRequest request, @RequestHeader("Authorization") String authHeader) {
         String token = authHeader.substring(7);
         User currentUser = userRepository.findByUsername(jwtUtil.extractUsername(token)).orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        Long ownerId = currentUser.getId();
 
-        Home createdHome = homeService.createHome(request.name(), ownerId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdHome);
+        HomeResponse response = homeService.createHome(request.name(), currentUser.getId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PatchMapping("/{homeId}")
+    public ResponseEntity<HomeResponse> update(@PathVariable Long homeId, @Valid @RequestBody HomeUpdateRequest request, @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        String currentUsername = jwtUtil.extractUsername(token);
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        HomeResponse newHome = homeService.updateHome(homeId, currentUser.getId(),request);
+        return ResponseEntity.status(HttpStatus.OK).body(newHome);
     }
 
     @PostMapping("/{homeId}/members")
@@ -48,7 +59,6 @@ public class HomeController {
         String currentUsername = jwtUtil.extractUsername(token);
         User currentUser = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
         homeService.addMember(homeId, currentUser.getId(), request.username());
         return ResponseEntity.status(HttpStatus.OK).build();
     }
@@ -59,13 +69,24 @@ public class HomeController {
         String currentUsername = jwtUtil.extractUsername(token);
         User currentUser = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
         homeService.kickMember(homeId, currentUser.getId(), request.username());
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-    @GetMapping("/{homeId}")
-    public ResponseEntity<List<MediaResponse>> getMedian(@PathVariable Long homeId, @RequestHeader("Authorization") String authHeader) {
+    @PatchMapping("/{homeId}/owner")
+    public ResponseEntity<Void> changeOwner(@PathVariable Long homeId,@Valid @RequestBody ManageMemberRequest request, @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        String currentUsername = jwtUtil.extractUsername(token);
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        homeService.changeOwner(homeId,currentUser.getId(), request.username());
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+
+
+    @GetMapping("/{homeId}/media")
+    public ResponseEntity<List<MediaResponse>> getMedia(@PathVariable Long homeId, @RequestHeader("Authorization") String authHeader) {
         String token = authHeader.substring(7);
         String currentUsername = jwtUtil.extractUsername(token);
         User currentUser = userRepository.findByUsername(currentUsername)

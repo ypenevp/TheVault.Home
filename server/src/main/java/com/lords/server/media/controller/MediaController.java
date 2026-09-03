@@ -38,7 +38,7 @@ public class MediaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(savedMedia);
     }
 
-    @DeleteMapping("/delete/{mediaId}")
+    @DeleteMapping("/{mediaId}")
     public ResponseEntity<Void> delete(@PathVariable Long mediaId) {
         mediaService.deleteMedia(mediaId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
