@@ -1,5 +1,6 @@
 package com.lords.server.home.controller;
 
+import com.lords.server.auth.dto.response.UserDetailsResponse;
 import com.lords.server.auth.entity.User;
 import com.lords.server.auth.repository.UserRepository;
 import com.lords.server.exception.custom.ResourceNotFoundException;
@@ -43,6 +44,16 @@ public class HomeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @GetMapping("/{homeId}")
+    public ResponseEntity<HomeResponse> getHomeDetails(@PathVariable Long homeId, @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        String currentUsername = jwtUtil.extractUsername(token);
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        HomeResponse newHome = homeService.getHome(homeId, currentUser.getId());
+        return ResponseEntity.status(HttpStatus.OK).body(newHome);
+    }
+
     @PatchMapping("/{homeId}")
     public ResponseEntity<HomeResponse> update(@PathVariable Long homeId, @Valid @RequestBody HomeUpdateRequest request, @RequestHeader("Authorization") String authHeader) {
         String token = authHeader.substring(7);
@@ -73,6 +84,16 @@ public class HomeController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
+    @GetMapping("{homeId}/members")
+    public ResponseEntity<List<UserDetailsResponse>> viewHomeMembers(@PathVariable Long homeId, @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        String currentUsername = jwtUtil.extractUsername(token);
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        List<UserDetailsResponse> members = homeService.getMembers(homeId, currentUser.getId());
+        return ResponseEntity.status(HttpStatus.OK).body(members);
+    }
+
     @PatchMapping("/{homeId}/owner")
     public ResponseEntity<Void> changeOwner(@PathVariable Long homeId,@Valid @RequestBody ManageMemberRequest request, @RequestHeader("Authorization") String authHeader) {
         String token = authHeader.substring(7);
@@ -82,8 +103,6 @@ public class HomeController {
         homeService.changeOwner(homeId,currentUser.getId(), request.username());
         return ResponseEntity.status(HttpStatus.OK).build();
     }
-
-
 
     @GetMapping("/{homeId}/media")
     public ResponseEntity<List<MediaResponse>> getMedia(@PathVariable Long homeId, @RequestHeader("Authorization") String authHeader) {

@@ -1,5 +1,6 @@
 package com.lords.server.home.service;
 
+import com.lords.server.auth.dto.response.UserDetailsResponse;
 import com.lords.server.auth.entity.User;
 import com.lords.server.auth.repository.UserRepository;
 import com.lords.server.exception.custom.AccessDeniedException;
@@ -52,6 +53,24 @@ public class HomeService {
                 saved.getName(),
                 saved.getOwner().getUsername(),
                 saved.getTotalSizeInBytes()
+        );
+    }
+
+    public HomeResponse getHome(Long homeId, Long currentUserId) {
+        Home home = homeRepository.findById(homeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!home.getOwner().getId().equals(currentUser.getId()) && !homeMemberRepository.existsByHomeAndUser(home, currentUser)){
+            throw new AccessDeniedException("You don't have permission to view this home");
+        }
+
+        return new HomeResponse(
+                home.getId(),
+                home.getName(),
+                home.getOwner().getUsername(),
+                home.getTotalSizeInBytes()
         );
     }
 
@@ -124,6 +143,26 @@ public class HomeService {
         HomeMember delCurrent = homeMemberRepository.findByHomeAndUser(home, delMember).orElseThrow(() -> new ResourceNotFoundException("Member not found"));
 
         homeMemberRepository.delete(delCurrent);
+    }
+
+    public List<UserDetailsResponse> getMembers(Long homeId, Long currentUserId) {
+        Home home = homeRepository.findById(homeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!home.getOwner().getId().equals(currentUser.getId()) && !homeMemberRepository.existsByHomeAndUser(home, currentUser)){
+            throw new AccessDeniedException("You don't have permission to view this home");
+        }
+
+        List<HomeMember> members = homeMemberRepository.findAllByHome(home);
+
+        List<UserDetailsResponse> result = members.stream()
+                .map(HomeMember::getUser)
+                .map(UserDetailsResponse::from)
+                .toList();
+
+        return result;
     }
 
     public List<MediaResponse> getMedia(Long homeId, Long currentUserId) {
