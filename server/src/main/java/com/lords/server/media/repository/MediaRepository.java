@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface MediaRepository extends JpaRepository<Media, Long> {
 
     Optional<List<Media>> findAllByHome(Home home);
+
+    Void deleteAllByHome(Home home);
 }

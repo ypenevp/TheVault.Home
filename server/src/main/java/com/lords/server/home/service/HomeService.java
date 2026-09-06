@@ -17,7 +17,9 @@ import com.lords.server.media.entity.Media;
 import com.lords.server.media.repository.MediaRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 @Service
@@ -95,6 +97,32 @@ public class HomeService {
                 saved.getTotalSizeInBytes(),
                 saved.getMaxSizeInBytes()
         );
+    }
+
+    public void deleteHome(Long homeId, Long currentUserId) {
+        Home home = homeRepository.findById(homeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!home.getOwner().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("You don't have permission to Delete this home");
+        }
+
+        List<Media> mediaList = mediaRepository.findAllByHome(home).orElseThrow(() -> new ResourceNotFoundException("Media not found"));
+
+        for (Media media : mediaList) {
+            try {
+                Path filePath = Path.of(media.getPath());
+                Files.deleteIfExists(filePath);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to delete media file: " + media.getPath(), e);
+            }
+        }
+
+        homeMemberRepository.deleteAllByHome(home);
+        mediaRepository.deleteAllByHome(home);
+        homeRepository.delete(home);
     }
     public void addMember(Long homeId, Long currentUserId, String usernameToAdd) {
 

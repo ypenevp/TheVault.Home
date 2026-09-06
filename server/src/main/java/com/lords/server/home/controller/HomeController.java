@@ -64,6 +64,16 @@ public class HomeController {
         return ResponseEntity.status(HttpStatus.OK).body(newHome);
     }
 
+    @DeleteMapping("/{homeId}")
+    public ResponseEntity<Void> destroy(@PathVariable Long homeId, @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        String currentUsername = jwtUtil.extractUsername(token);
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        homeService.deleteHome(homeId, currentUser.getId());
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
     @PostMapping("/{homeId}/members")
     public ResponseEntity<Void> inviteMember(@Valid @RequestBody ManageMemberRequest request, @PathVariable Long homeId, @RequestHeader("Authorization") String authHeader) {
         String token = authHeader.substring(7);

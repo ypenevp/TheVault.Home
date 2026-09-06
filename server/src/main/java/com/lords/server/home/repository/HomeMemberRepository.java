@@ -14,5 +14,7 @@ public interface HomeMemberRepository extends JpaRepository<HomeMember, Long> {
 
     List<HomeMember> findAllByHome(Home home);
 
+    Void deleteAllByHome(Home home);
+
 
 }
