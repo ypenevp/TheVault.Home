@@ -1,13 +1,18 @@
 package com.lords.server.media.service;
 
+import com.lords.server.auth.entity.User;
+import com.lords.server.auth.repository.UserRepository;
+import com.lords.server.exception.custom.AccessDeniedException;
 import com.lords.server.exception.custom.ResourceNotFoundException;
 import com.lords.server.home.entity.Home;
+import com.lords.server.home.repository.HomeMemberRepository;
 import com.lords.server.home.repository.HomeRepository;
 import com.lords.server.media.entity.Media;
 import com.lords.server.media.repository.MediaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import com.lords.server.exception.custom.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -23,14 +28,28 @@ public class MediaService {
     private String storagePath;
     private MediaRepository mediaRepository;
     private final HomeRepository homeRepository;
+    private final UserRepository userRepository;
+
+    private final HomeMemberRepository  homeMemberRepository;
 
 
-    public MediaService(MediaRepository mediaRepository, HomeRepository homeRepository) {
+    public MediaService(MediaRepository mediaRepository, HomeRepository homeRepository,  UserRepository userRepository,  HomeMemberRepository  homeMemberRepository) {
         this.mediaRepository = mediaRepository;
         this.homeRepository = homeRepository;
+        this.userRepository = userRepository;
+        this.homeMemberRepository = homeMemberRepository;
     }
 
-    public Media uploadMedia(MultipartFile file, Home home){
+    public Media uploadMedia(MultipartFile file, Home home, User currentUser) {
+
+        if (!home.getOwner().getId().equals(currentUser.getId()) && !homeMemberRepository.existsByHomeAndUser(home, currentUser)){
+            throw new AccessDeniedException("You don't have permission to upload media in this home");
+        }
+
+        if((file.getSize() + home.getTotalSizeInBytes()) > home.getMaxSizeInBytes()){
+            throw new MaxUploadSizeExceededException("Max size reached");
+        }
+
         try {
             String storedName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
             Path uploadDir = Path.of(storagePath);
@@ -42,10 +61,15 @@ public class MediaService {
 
             Files.copy(file.getInputStream(), uploadPath);
 
+            String mimeType = Files.probeContentType(uploadPath);
+            if (mimeType == null || mimeType.equals("application/octet-stream")) {
+                mimeType = file.getContentType();
+            }
+
             Media newMedia = new Media();
             newMedia.setHome(home);
             newMedia.setPath(uploadPath.toString());
-            newMedia.setMimeType(file.getContentType());
+            newMedia.setMimeType(mimeType);
             newMedia.setSizeInBytes(file.getSize());
             newMedia.setCreatedAt(LocalDate.now());
 
@@ -60,8 +84,13 @@ public class MediaService {
         }
     }
 
-    public void deleteMedia(Long mediaId){
+    public void deleteMedia(Long mediaId, User  currentUser) {
         Media deleteMedia = mediaRepository.findById(mediaId).orElseThrow(() -> new ResourceNotFoundException("Media not found"));
+        Home currentHome = deleteMedia.getHome();
+
+        if (!currentHome.getOwner().getId().equals(currentUser.getId()) && !homeMemberRepository.existsByHomeAndUser(currentHome, currentUser)){
+            throw new AccessDeniedException("You don't have permission to delete media from this home");
+        }
 
         Path filePath = Path.of(deleteMedia.getPath());
         try {

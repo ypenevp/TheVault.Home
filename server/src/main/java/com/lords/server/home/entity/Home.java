@@ -29,9 +29,13 @@ public class Home {
     @Column(name = "created_at", nullable = false)
     private LocalDate createdAt;
 
+    @Column(name = "max_size", nullable = false)
+    private Long maxSizeInBytes;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDate.now();
+        this.maxSizeInBytes = 5000000000L;
     }
 }
 

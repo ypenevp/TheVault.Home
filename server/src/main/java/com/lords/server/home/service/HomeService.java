@@ -52,7 +52,8 @@ public class HomeService {
                 saved.getId(),
                 saved.getName(),
                 saved.getOwner().getUsername(),
-                saved.getTotalSizeInBytes()
+                saved.getTotalSizeInBytes(),
+                saved.getMaxSizeInBytes()
         );
     }
 
@@ -70,7 +71,8 @@ public class HomeService {
                 home.getId(),
                 home.getName(),
                 home.getOwner().getUsername(),
-                home.getTotalSizeInBytes()
+                home.getTotalSizeInBytes(),
+                home.getMaxSizeInBytes()
         );
     }
 
@@ -90,7 +92,8 @@ public class HomeService {
                 saved.getId(),
                 saved.getName(),
                 saved.getOwner().getUsername(),
-                saved.getTotalSizeInBytes()
+                saved.getTotalSizeInBytes(),
+                saved.getMaxSizeInBytes()
         );
     }
     public void addMember(Long homeId, Long currentUserId, String usernameToAdd) {

@@ -2,6 +2,7 @@ package com.lords.server.exception;
 
 import com.lords.server.exception.custom.AccessDeniedException;
 import com.lords.server.exception.custom.DuplicateResourceException;
+import com.lords.server.exception.custom.MaxUploadSizeExceededException;
 import com.lords.server.exception.custom.ResourceNotFoundException;
 import com.lords.server.exception.dto.GeneralErrorResponse;
 import com.lords.server.exception.dto.ValidationErrorResponse;
@@ -105,6 +106,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<GeneralErrorResponse> handleAccessDenied(AccessDeniedException ex, HttpServletRequest req) {
         log.warn("Access denied: {}", ex.getMessage());
+        return buildError(HttpStatus.FORBIDDEN, ex.getMessage(), req.getRequestURI());
+    }
+
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<GeneralErrorResponse> handleMaxSizeReached(MaxUploadSizeExceededException ex, HttpServletRequest req) {
+        log.warn("Max upload size reached: {}", ex.getMessage());
         return buildError(HttpStatus.FORBIDDEN, ex.getMessage(), req.getRequestURI());
     }
 }

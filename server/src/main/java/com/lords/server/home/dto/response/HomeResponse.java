@@ -4,5 +4,6 @@ public record HomeResponse(
         Long id,
         String name,
         String ownerUsername,
-        Long totalSizeInBytes
+        Long totalSizeInBytes,
+        Long maxSizeInBytes
 ) {}
