@@ -5,6 +5,7 @@ import com.lords.server.auth.entity.User;
 import com.lords.server.auth.repository.UserRepository;
 import com.lords.server.exception.custom.ResourceNotFoundException;
 import com.lords.server.home.dto.request.HomeUpdateRequest;
+import com.lords.server.home.dto.request.HomeUpdateStorage;
 import com.lords.server.home.dto.request.ManageMemberRequest;
 import com.lords.server.home.dto.request.CreateHomeRequest;
 import com.lords.server.home.dto.response.HomeResponse;
@@ -16,6 +17,7 @@ import com.lords.server.security.JwtUtil;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.w3c.dom.stylesheets.LinkStyle;
 
@@ -60,6 +62,17 @@ public class HomeController {
         User currentUser = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         HomeResponse newHome = homeService.updateHome(homeId, currentUser.getId(),request);
+        return ResponseEntity.status(HttpStatus.OK).body(newHome);
+    }
+
+    @PatchMapping("/{homeId}/storage")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<HomeResponse> updateHomeStorage(@PathVariable Long homeId, @Valid @RequestBody HomeUpdateStorage request, @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        String currentUsername = jwtUtil.extractUsername(token);
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        HomeResponse newHome = homeService.updateStorage(homeId, currentUser.getId(),request);
         return ResponseEntity.status(HttpStatus.OK).body(newHome);
     }
 

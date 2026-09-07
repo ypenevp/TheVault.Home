@@ -7,6 +7,7 @@ import com.lords.server.exception.custom.AccessDeniedException;
 import com.lords.server.exception.custom.DuplicateResourceException;
 import com.lords.server.exception.custom.ResourceNotFoundException;
 import com.lords.server.home.dto.request.HomeUpdateRequest;
+import com.lords.server.home.dto.request.HomeUpdateStorage;
 import com.lords.server.home.dto.response.HomeResponse;
 import com.lords.server.home.entity.Home;
 import com.lords.server.home.entity.HomeMember;
@@ -88,6 +89,21 @@ public class HomeService {
         }
 
         home.setName(request.name());
+        Home saved = homeRepository.save(home);
+        return new HomeResponse(
+                saved.getId(),
+                saved.getName(),
+                saved.getOwner().getUsername(),
+                saved.getTotalSizeInBytes(),
+                saved.getMaxSizeInBytes()
+        );
+    }
+
+    public HomeResponse updateStorage(Long homeId, Long currentUserId, HomeUpdateStorage request) {
+        Home home = homeRepository.findById(homeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
+
+        home.setMaxSizeInBytes(request.newStorage());
         Home saved = homeRepository.save(home);
         return new HomeResponse(
                 saved.getId(),
