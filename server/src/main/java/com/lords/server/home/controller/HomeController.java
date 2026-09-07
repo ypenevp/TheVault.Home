@@ -11,7 +11,6 @@ import com.lords.server.home.dto.response.HomeResponse;
 import com.lords.server.home.entity.Home;
 import com.lords.server.home.service.HomeService;
 
-import com.lords.server.media.dto.response.MediaResponse;
 import com.lords.server.media.entity.Media;
 import com.lords.server.security.JwtUtil;
 import jakarta.validation.Valid;
@@ -114,13 +113,4 @@ public class HomeController {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
-    @GetMapping("/{homeId}/media")
-    public ResponseEntity<List<MediaResponse>> getMedia(@PathVariable Long homeId, @RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.substring(7);
-        String currentUsername = jwtUtil.extractUsername(token);
-        User currentUser = userRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        List<MediaResponse> response = homeService.getMedia(homeId, currentUser.getId());
-        return ResponseEntity.status(HttpStatus.OK).body(response);
-    }
 }

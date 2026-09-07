@@ -7,6 +7,7 @@ import com.lords.server.exception.custom.ResourceNotFoundException;
 import com.lords.server.home.entity.Home;
 import com.lords.server.home.repository.HomeMemberRepository;
 import com.lords.server.home.repository.HomeRepository;
+import com.lords.server.media.dto.response.MediaResponse;
 import com.lords.server.media.entity.Media;
 import com.lords.server.media.repository.MediaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
 
 
 @Service
@@ -105,5 +107,36 @@ public class MediaService {
         homeRepository.save(home);
         mediaRepository.delete(deleteMedia);
     }
+    private List<MediaResponse> getFilteredMedia(Long homeId, User currentUser, String condition) {
+        Home home = homeRepository.findById(homeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
+
+        if (!home.getOwner().getId().equals(currentUser.getId()) && !homeMemberRepository.existsByHomeAndUser(home, currentUser)) {
+            throw new AccessDeniedException("You don't have permission to view media in this home");
+        }
+
+        List<Media> media = mediaRepository.findAllByHome(home)
+                .orElseThrow(() -> new ResourceNotFoundException("Media not found"));
+
+        media.removeIf(filter -> !filter.getMimeType().contains(condition));
+
+        return media.stream()
+                .map(MediaResponse::from)
+                .toList();
+    }
+
+    public List<MediaResponse> getAllImages(Long homeId, User currentUser) {
+        return getFilteredMedia(homeId, currentUser, "image");
+    }
+
+    public List<MediaResponse> getAllDocuments(Long homeId, User currentUser) {
+        return getFilteredMedia(homeId, currentUser, "application");
+    }
+
+    public List<MediaResponse> getAllMedia(Long homeId, User currentUser) {
+        return getFilteredMedia(homeId, currentUser, "");
+    }
+
+
 
 }

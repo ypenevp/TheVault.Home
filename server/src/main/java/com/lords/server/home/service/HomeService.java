@@ -12,7 +12,6 @@ import com.lords.server.home.entity.Home;
 import com.lords.server.home.entity.HomeMember;
 import com.lords.server.home.repository.HomeMemberRepository;
 import com.lords.server.home.repository.HomeRepository;
-import com.lords.server.media.dto.response.MediaResponse;
 import com.lords.server.media.entity.Media;
 import com.lords.server.media.repository.MediaRepository;
 import org.springframework.stereotype.Service;
@@ -194,24 +193,6 @@ public class HomeService {
                 .toList();
 
         return result;
-    }
-
-    public List<MediaResponse> getMedia(Long homeId, Long currentUserId) {
-        Home home = homeRepository.findById(homeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
-        User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        if (!home.getOwner().getId().equals(currentUser.getId()) && !homeMemberRepository.existsByHomeAndUser(home, currentUser)) {
-            throw new AccessDeniedException("You don't have permission to view media in this home");
-        }
-
-        List<Media> media = mediaRepository.findAllByHome(home)
-                .orElseThrow(() -> new ResourceNotFoundException("Media not found"));
-
-        return media.stream()
-                .map(MediaResponse::from)
-                .toList();
     }
 
     public void changeOwner(Long homeId, Long currentUserId, String newOwnerUsername) {

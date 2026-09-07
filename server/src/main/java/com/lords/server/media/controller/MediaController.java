@@ -23,6 +23,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/media")
 public class MediaController {
@@ -59,6 +61,37 @@ public class MediaController {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         mediaService.deleteMedia(mediaId, currentUser);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @GetMapping("/{homeId}")
+    public ResponseEntity<List<MediaResponse>> getAllMedia(@PathVariable Long homeId, @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        String currentUsername = jwtUtil.extractUsername(token);
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        List<MediaResponse> response = mediaService.getAllMedia(homeId, currentUser);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping("/{homeId}/images")
+    public ResponseEntity<List<MediaResponse>> getAllImages(@PathVariable Long homeId, @RequestHeader("Authorization") String authHeader) {
+
+        String token = authHeader.substring(7);
+        String currentUsername = jwtUtil.extractUsername(token);
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        List<MediaResponse> response = mediaService.getAllImages(homeId, currentUser);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping("/{homeId}/docs")
+    public ResponseEntity<List<MediaResponse>> getAllDocuments(@PathVariable Long homeId, @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        String currentUsername = jwtUtil.extractUsername(token);
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        List<MediaResponse> response = mediaService.getAllDocuments(homeId, currentUser);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
 }
