@@ -5,6 +5,7 @@ import com.lords.server.auth.dto.request.RegisterRequest;
 import com.lords.server.auth.dto.response.AuthResponse;
 import com.lords.server.auth.dto.response.UserDetailsResponse;
 import com.lords.server.auth.entity.RefreshToken;
+import com.lords.server.auth.entity.Role;
 import com.lords.server.auth.entity.User;
 import com.lords.server.auth.repository.UserRepository;
 import com.lords.server.exception.custom.ResourceNotFoundException;
@@ -39,6 +40,7 @@ public class AuthService {
         User user = new User();
         user.setUsername(request.username());
         user.setPassword(hashedPassword);
+        user.setRole(Role.USER);
 
         userRepository.save(user);
     }

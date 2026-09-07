@@ -87,21 +87,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
-    public ResponseEntity<GeneralErrorResponse> handleAuthentication(AuthenticationException ex, HttpServletRequest req) {
-
-        log.warn("Authentication failed: {}", ex.getMessage());
-
-        GeneralErrorResponse response = new GeneralErrorResponse(
-                HttpStatus.UNAUTHORIZED.value(),
-                HttpStatus.UNAUTHORIZED.getReasonPhrase(),
-                "Authentication required",
-                Instant.now(),
-                req.getRequestURI()
-        );
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<GeneralErrorResponse> handleSecurityAccessDenied(
+            org.springframework.security.access.AccessDeniedException ex, HttpServletRequest req) {
+        log.warn("Insufficient permissions: {}", ex.getMessage());
+        return buildError(HttpStatus.FORBIDDEN, "You do not have permission to perform this action.", req.getRequestURI());
     }
+
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<GeneralErrorResponse> handleAccessDenied(AccessDeniedException ex, HttpServletRequest req) {
