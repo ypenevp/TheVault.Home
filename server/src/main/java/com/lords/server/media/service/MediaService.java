@@ -42,7 +42,10 @@ public class MediaService {
         this.homeMemberRepository = homeMemberRepository;
     }
 
-    public Media uploadMedia(MultipartFile file, Home home, User currentUser) {
+    public Media uploadMedia(MultipartFile file, Long homeId, User currentUser) {
+
+        Home home = homeRepository.findById(homeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
 
         if (!home.getOwner().getId().equals(currentUser.getId()) && !homeMemberRepository.existsByHomeAndUser(home, currentUser)){
             throw new AccessDeniedException("You don't have permission to upload media in this home");
