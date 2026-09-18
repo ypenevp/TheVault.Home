@@ -33,11 +33,15 @@ public class Note {
     @Column(name = "content", nullable = true, columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "is_public", nullable = false)
+    private Boolean isPublic;
+
     @Column(name = "created_at", nullable = false)
     private LocalDate createdAt;
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDate.now();
+        this.isPublic = false;
     }
 }
