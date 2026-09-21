@@ -77,14 +77,4 @@ public class AuthService {
         refreshTokenService.deleteToken(refreshToken);
     }
 
-
-    public UserDetailsResponse getCurrentUser() {
-
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        return new UserDetailsResponse(user.getId(), user.getUsername());
-    }
 }

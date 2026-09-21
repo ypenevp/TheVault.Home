@@ -67,7 +67,7 @@ public class HomeController {
     @PostMapping("/{homeId}/members")
     public ResponseEntity<Void> addMember(@PathVariable Long homeId, @Valid @RequestBody ManageMemberRequest request, @CurrentUser User currentUser) {
         homeService.addMember(homeId, currentUser.getId(), request.username());
-        return ResponseEntity.status(HttpStatus.OK).build();
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @DeleteMapping("/{homeId}/members")
@@ -85,7 +85,7 @@ public class HomeController {
     @PatchMapping("/{homeId}/owner")
     public ResponseEntity<Void> changeOwner(@PathVariable Long homeId, @Valid @RequestBody ManageMemberRequest request, @CurrentUser User currentUser) {
         homeService.changeOwner(homeId, currentUser.getId(), request.username());
-        return ResponseEntity.status(HttpStatus.OK).build();
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
 }

@@ -42,8 +42,9 @@ public class MediaService {
         this.homeMemberRepository = homeMemberRepository;
     }
 
-    public Media uploadMedia(MultipartFile file, Long homeId, User currentUser) {
-
+    public Media uploadMedia(MultipartFile file, Long homeId, Long userId) {
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Home home = homeRepository.findById(homeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
 
@@ -89,8 +90,12 @@ public class MediaService {
         }
     }
 
-    public void deleteMedia(Long mediaId, User  currentUser) {
-        Media deleteMedia = mediaRepository.findById(mediaId).orElseThrow(() -> new ResourceNotFoundException("Media not found"));
+    public void deleteMedia(Long mediaId, Long  userId) {
+
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        Media deleteMedia = mediaRepository.findById(mediaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Media not found"));
         Home currentHome = deleteMedia.getHome();
 
         if (!currentHome.getOwner().getId().equals(currentUser.getId()) && !homeMemberRepository.existsByHomeAndUser(currentHome, currentUser)){
@@ -110,7 +115,10 @@ public class MediaService {
         homeRepository.save(home);
         mediaRepository.delete(deleteMedia);
     }
-    private List<MediaResponse> getFilteredMedia(Long homeId, User currentUser, String condition) {
+    private List<MediaResponse> getFilteredMedia(Long homeId, Long userId, String condition) {
+
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Home home = homeRepository.findById(homeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
 
@@ -128,16 +136,16 @@ public class MediaService {
                 .toList();
     }
 
-    public List<MediaResponse> getAllImages(Long homeId, User currentUser) {
-        return getFilteredMedia(homeId, currentUser, "image");
+    public List<MediaResponse> getAllImages(Long homeId, Long userId) {
+        return getFilteredMedia(homeId, userId, "image");
     }
 
-    public List<MediaResponse> getAllDocuments(Long homeId, User currentUser) {
-        return getFilteredMedia(homeId, currentUser, "application");
+    public List<MediaResponse> getAllDocuments(Long homeId, Long userId) {
+        return getFilteredMedia(homeId, userId, "application");
     }
 
-    public List<MediaResponse> getAllMedia(Long homeId, User currentUser) {
-        return getFilteredMedia(homeId, currentUser, "");
+    public List<MediaResponse> getAllMedia(Long homeId, Long userId) {
+        return getFilteredMedia(homeId, userId, "");
     }
 
 

@@ -6,7 +6,9 @@ import com.lords.server.auth.dto.request.RefreshTokenRequest;
 import com.lords.server.auth.dto.request.RegisterRequest;
 import com.lords.server.auth.dto.response.AuthResponse;
 import com.lords.server.auth.dto.response.UserDetailsResponse;
+import com.lords.server.auth.entity.User;
 import com.lords.server.auth.service.AuthService;
+import com.lords.server.security.CurrentUser;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,19 +37,19 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refresh(@RequestBody RefreshTokenRequest request) {
+    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
         AuthResponse response = authService.refresh(request.refreshToken());
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestBody LogoutRequest request) {
+    public ResponseEntity<Void> logout(@Valid @RequestBody LogoutRequest request) {
         authService.logoutUser(request.refreshToken());
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserDetailsResponse> getCurrentUser() {
-        return ResponseEntity.status(HttpStatus.OK).body(authService.getCurrentUser());
+    public ResponseEntity<UserDetailsResponse> getCurrentUser(@CurrentUser User currentUser) {
+        return ResponseEntity.status(HttpStatus.OK).body(new UserDetailsResponse(currentUser.getId(), currentUser.getUsername()));
     }
 }
