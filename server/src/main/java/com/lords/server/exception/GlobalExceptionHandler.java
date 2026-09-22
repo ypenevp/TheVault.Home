@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -106,5 +107,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<GeneralErrorResponse> handleMaxSizeReached(MaxUploadSizeExceededException ex, HttpServletRequest req) {
         log.warn("Max upload size reached: {}", ex.getMessage());
         return buildError(HttpStatus.FORBIDDEN, ex.getMessage(), req.getRequestURI());
+    }
+
+    @ExceptionHandler(InvalidMediaTypeException.class)
+    public ResponseEntity<GeneralErrorResponse> handleInvalidMediaType(
+            InvalidMediaTypeException ex, HttpServletRequest req) {
+        log.warn("Invalid media type: {}", ex.getMessage());
+        return buildError(HttpStatus.BAD_REQUEST, ex.getMessage(), req.getRequestURI());
     }
 }
