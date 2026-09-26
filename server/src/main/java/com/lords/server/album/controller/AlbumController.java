@@ -51,7 +51,7 @@ public class AlbumController {
     public ResponseEntity<Page<AlbumImageResponse>> getAllImagesInAlbum(@PathVariable Long albumId, @CurrentUser User currentUser,
         @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
         Page<AlbumImageResponse> response = albumService.getAllImagesInAlbum(albumId, currentUser.getId(), pageable);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @DeleteMapping("/{albumId}")

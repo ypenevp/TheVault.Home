@@ -13,9 +13,10 @@ import com.lords.server.note.dto.request.EditNoteRequest;
 import com.lords.server.note.dto.response.NoteResponse;
 import com.lords.server.note.entity.Note;
 import com.lords.server.note.repository.NoteRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
@@ -33,6 +34,7 @@ public class NoteService {
         this.homeMemberRepository = homeMemberRepository;
     }
 
+    @Transactional
     public NoteResponse createNote(CreateNoteRequest newNote, Long writerId, Long homeId) {
         Home home = homeRepository.findById(homeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
@@ -51,15 +53,10 @@ public class NoteService {
 
         noteRepository.save(saved);
 
-        return new NoteResponse(
-                saved.getId(),
-                saved.getTitle(),
-                saved.getContent(),
-                saved.getCreatedAt(),
-                saved.getIsPublic()
-        );
+        return NoteResponse.from(saved);
     }
 
+    @Transactional(readOnly = true)
     public NoteResponse getNote(Long noteId, Long userId){
         User currentUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -75,21 +72,15 @@ public class NoteService {
             throw new AccessDeniedException("You don't have permission to view this private note");
         }
 
-        return new NoteResponse(
-                currentNote.getId(),
-                currentNote.getTitle(),
-                currentNote.getContent(),
-                currentNote.getCreatedAt(),
-                currentNote.getIsPublic()
-        );
+        return NoteResponse.from(currentNote);
     }
 
+    @Transactional
     public NoteResponse updateNote(EditNoteRequest newNote, Long userId, Long noteId) {
         User currentUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Note currentNote = noteRepository.findById(noteId).
                 orElseThrow(() -> new ResourceNotFoundException("Note not found"));
-        Home currentHome = currentNote.getHome();
 
         if(!currentNote.getWriter().getId().equals(currentUser.getId())){
             throw new AccessDeniedException("You don't have permission to edit this note");
@@ -105,21 +96,15 @@ public class NoteService {
 
 
         noteRepository.save(currentNote);
-        return new NoteResponse(
-                currentNote.getId(),
-                currentNote.getTitle(),
-                currentNote.getContent(),
-                currentNote.getCreatedAt(),
-                currentNote.getIsPublic()
-        );
+        return NoteResponse.from(currentNote);
     }
 
+    @Transactional
     public NoteResponse updateNoteVisibility(ChangeNoteVisibility newVisibility, Long userId, Long noteId) {
         User currentUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Note currentNote = noteRepository.findById(noteId).
                 orElseThrow(() -> new ResourceNotFoundException("Note not found"));
-        Home currentHome = currentNote.getHome();
 
         if(!currentNote.getWriter().getId().equals(currentUser.getId())){
             throw new AccessDeniedException("You don't have permission to edit this note visibility");
@@ -128,16 +113,10 @@ public class NoteService {
         currentNote.setIsPublic(newVisibility.isPublic());
         noteRepository.save(currentNote);
 
-        return new NoteResponse(
-                currentNote.getId(),
-                currentNote.getTitle(),
-                currentNote.getContent(),
-                currentNote.getCreatedAt(),
-                currentNote.getIsPublic()
-        );
+        return NoteResponse.from(currentNote);
     }
 
-
+    @Transactional
     public void deleteNote(Long userId, Long noteId) {
 
         User currentUser = userRepository.findById(userId)
@@ -153,7 +132,8 @@ public class NoteService {
         noteRepository.delete(deleteNote);
     }
 
-    public List<NoteResponse> getAllNotesByHome(Long userId, Long homeId) {
+    @Transactional(readOnly = true)
+    public Page<NoteResponse> getAllNotesByHome(Long userId, Long homeId, Pageable pageable) {
         User currentUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Home currentHome = homeRepository.findById(homeId)
@@ -163,19 +143,16 @@ public class NoteService {
             throw new AccessDeniedException("You don't have permission to view notes in this home");
         }
 
-        List<Note> notes = noteRepository.findAllByHomeAndIsPublicTrue(currentHome);
-
-        List<NoteResponse> response = notes.stream().map(NoteResponse::from).toList();
+        Page<NoteResponse> response = noteRepository.findAllByHomeAndIsPublicTrue(currentHome, pageable).map(NoteResponse::from);
         return response;
     }
 
-    public List<NoteResponse> getAllNotesByWriter(Long userId) {
+    @Transactional(readOnly = true)
+    public Page<NoteResponse> getAllNotesByWriter(Long userId, Pageable pageable) {
         User currentUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        List<Note> notes = noteRepository.findAllByWriter(currentUser);
-
-        List<NoteResponse> response = notes.stream().map(NoteResponse::from).toList();
+        Page<NoteResponse> response = noteRepository.findAllByWriter(currentUser, pageable).map(NoteResponse::from);
         return response;
     }
 
