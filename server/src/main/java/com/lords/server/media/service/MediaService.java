@@ -10,17 +10,18 @@ import com.lords.server.home.repository.HomeRepository;
 import com.lords.server.media.dto.response.MediaResponse;
 import com.lords.server.media.entity.Media;
 import com.lords.server.media.repository.MediaRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import com.lords.server.exception.custom.MaxUploadSizeExceededException;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
-import java.util.List;
 
 
 @Service
@@ -28,7 +29,7 @@ public class MediaService {
 
     @Value("${media.storage.path}")
     private String storagePath;
-    private MediaRepository mediaRepository;
+    private final MediaRepository mediaRepository;
     private final HomeRepository homeRepository;
     private final UserRepository userRepository;
 
@@ -42,6 +43,7 @@ public class MediaService {
         this.homeMemberRepository = homeMemberRepository;
     }
 
+    @Transactional
     public Media uploadMedia(MultipartFile file, Long homeId, Long userId) {
         User currentUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -90,6 +92,7 @@ public class MediaService {
         }
     }
 
+    @Transactional
     public void deleteMedia(Long mediaId, Long  userId) {
 
         User currentUser = userRepository.findById(userId)
@@ -115,7 +118,8 @@ public class MediaService {
         homeRepository.save(home);
         mediaRepository.delete(deleteMedia);
     }
-    private List<MediaResponse> getFilteredMedia(Long homeId, Long userId, String condition) {
+
+    private Page<MediaResponse> getFilteredMedia(Long homeId, Long userId, String mimeTypePrefix, Pageable pageable) {
 
         User currentUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -126,26 +130,26 @@ public class MediaService {
             throw new AccessDeniedException("You don't have permission to view media in this home");
         }
 
-        List<Media> media = mediaRepository.findAllByHome(home)
-                .orElseThrow(() -> new ResourceNotFoundException("Media not found"));
+        if (mimeTypePrefix.isEmpty()) {
+            return mediaRepository.findAllByHome(home, pageable).map(MediaResponse::from);
+        }
 
-        media.removeIf(filter -> !filter.getMimeType().contains(condition));
-
-        return media.stream()
-                .map(MediaResponse::from)
-                .toList();
+        return mediaRepository.findAllByHomeAndMimeTypeStartingWith(home, mimeTypePrefix, pageable).map(MediaResponse::from);
     }
 
-    public List<MediaResponse> getAllImages(Long homeId, Long userId) {
-        return getFilteredMedia(homeId, userId, "image");
+    @Transactional(readOnly = true)
+    public Page<MediaResponse> getAllImages(Long homeId, Long userId, Pageable pageable) {
+        return getFilteredMedia(homeId, userId, "image/", pageable);
     }
 
-    public List<MediaResponse> getAllDocuments(Long homeId, Long userId) {
-        return getFilteredMedia(homeId, userId, "application");
+    @Transactional(readOnly = true)
+    public Page<MediaResponse> getAllDocuments(Long homeId, Long userId, Pageable pageable) {
+        return getFilteredMedia(homeId, userId, "application/", pageable);
     }
 
-    public List<MediaResponse> getAllMedia(Long homeId, Long userId) {
-        return getFilteredMedia(homeId, userId, "");
+    @Transactional(readOnly = true)
+    public Page<MediaResponse> getAllMedia(Long homeId, Long userId, Pageable pageable) {
+        return getFilteredMedia(homeId, userId, "", pageable);
     }
 
 

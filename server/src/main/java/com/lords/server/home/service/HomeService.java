@@ -124,7 +124,7 @@ public class HomeService {
             throw new AccessDeniedException("You don't have permission to Delete this home");
         }
 
-        List<Media> mediaList = mediaRepository.findAllByHome(home).orElseThrow(() -> new ResourceNotFoundException("Media not found"));
+        List<Media> mediaList = mediaRepository.findAllByHomeOrderByIdAsc(home);
 
         for (Media media : mediaList) {
             try {

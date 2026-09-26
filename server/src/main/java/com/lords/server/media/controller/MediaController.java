@@ -5,12 +5,15 @@ import com.lords.server.media.dto.response.MediaResponse;
 import com.lords.server.media.entity.Media;
 import com.lords.server.media.service.MediaService;
 import com.lords.server.security.CurrentUser;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/media")
@@ -34,20 +37,23 @@ public class MediaController {
     }
 
     @GetMapping("/{homeId}")
-    public ResponseEntity<List<MediaResponse>> getAllMedia(@PathVariable Long homeId, @CurrentUser User currentUser) {
-        List<MediaResponse> response = mediaService.getAllMedia(homeId, currentUser.getId());
+    public ResponseEntity<Page<MediaResponse>> getAllMedia(@PathVariable Long homeId, @CurrentUser User currentUser,
+        @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<MediaResponse> response = mediaService.getAllMedia(homeId, currentUser.getId(), pageable);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @GetMapping("/{homeId}/images")
-    public ResponseEntity<List<MediaResponse>> getAllImages(@PathVariable Long homeId, @CurrentUser User currentUser) {
-        List<MediaResponse> response = mediaService.getAllImages(homeId, currentUser.getId());
+    public ResponseEntity<Page<MediaResponse>> getAllImages(@PathVariable Long homeId, @CurrentUser User currentUser,
+        @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<MediaResponse> response = mediaService.getAllImages(homeId, currentUser.getId(), pageable);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @GetMapping("/{homeId}/docs")
-    public ResponseEntity<List<MediaResponse>> getAllDocuments(@PathVariable Long homeId, @CurrentUser User currentUser) {
-        List<MediaResponse> response = mediaService.getAllDocuments(homeId, currentUser.getId());
+    public ResponseEntity<Page<MediaResponse>> getAllDocuments(@PathVariable Long homeId, @CurrentUser User currentUser,
+        @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<MediaResponse> response = mediaService.getAllDocuments(homeId, currentUser.getId(), pageable);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
