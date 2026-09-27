@@ -26,8 +26,8 @@ public class MediaController {
 
     @PostMapping("/{homeId}")
     public ResponseEntity<MediaResponse> upload(@PathVariable Long homeId, @RequestParam("file") MultipartFile file, @CurrentUser User currentUser) {
-        Media savedMedia = mediaService.uploadMedia(file, homeId, currentUser.getId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(MediaResponse.from(savedMedia));
+        MediaResponse response = mediaService.uploadMedia(file, homeId, currentUser.getId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @DeleteMapping("/{mediaId}")

@@ -15,7 +15,10 @@ import com.lords.server.home.repository.HomeMemberRepository;
 import com.lords.server.home.repository.HomeRepository;
 import com.lords.server.media.entity.Media;
 import com.lords.server.media.repository.MediaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -39,6 +42,7 @@ public class HomeService {
         this.mediaRepository = mediaRepository;
     }
 
+    @Transactional
     public HomeResponse createHome(String name, Long ownerId) {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Owner not found"));
@@ -50,15 +54,11 @@ public class HomeService {
 
         Home saved = homeRepository.save(home);
 
-        return new HomeResponse(
-                saved.getId(),
-                saved.getName(),
-                saved.getOwner().getUsername(),
-                saved.getTotalSizeInBytes(),
-                saved.getMaxSizeInBytes()
-        );
+        return HomeResponse.from(saved);
     }
 
+
+    @Transactional(readOnly = true)
     public HomeResponse getHome(Long homeId, Long currentUserId) {
         Home home = homeRepository.findById(homeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
@@ -69,15 +69,10 @@ public class HomeService {
             throw new AccessDeniedException("You don't have permission to view this home");
         }
 
-        return new HomeResponse(
-                home.getId(),
-                home.getName(),
-                home.getOwner().getUsername(),
-                home.getTotalSizeInBytes(),
-                home.getMaxSizeInBytes()
-        );
+        return HomeResponse.from(home);
     }
 
+    @Transactional
     public HomeResponse updateHome(Long homeId, Long currentUserId, HomeUpdateRequest request) {
         Home home = homeRepository.findById(homeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
@@ -90,30 +85,20 @@ public class HomeService {
 
         home.setName(request.name());
         Home saved = homeRepository.save(home);
-        return new HomeResponse(
-                saved.getId(),
-                saved.getName(),
-                saved.getOwner().getUsername(),
-                saved.getTotalSizeInBytes(),
-                saved.getMaxSizeInBytes()
-        );
+        return HomeResponse.from(saved);
     }
 
+    @Transactional
     public HomeResponse updateStorage(Long homeId, Long currentUserId, HomeUpdateStorage request) {
         Home home = homeRepository.findById(homeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
 
         home.setMaxSizeInBytes(request.newStorage());
         Home saved = homeRepository.save(home);
-        return new HomeResponse(
-                saved.getId(),
-                saved.getName(),
-                saved.getOwner().getUsername(),
-                saved.getTotalSizeInBytes(),
-                saved.getMaxSizeInBytes()
-        );
+        return HomeResponse.from(saved);
     }
 
+    @Transactional
     public void deleteHome(Long homeId, Long currentUserId) {
         Home home = homeRepository.findById(homeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
@@ -139,6 +124,8 @@ public class HomeService {
         mediaRepository.deleteAllByHome(home);
         homeRepository.delete(home);
     }
+
+    @Transactional
     public void addMember(Long homeId, Long currentUserId, String usernameToAdd) {
 
         Home home = homeRepository.findById(homeId)
@@ -168,6 +155,7 @@ public class HomeService {
         homeMemberRepository.save(member);
     }
 
+    @Transactional
     public void kickMember(Long homeId, Long currentUserId, String usernameToDelete) {
 
         Home home = homeRepository.findById(homeId)
@@ -191,7 +179,8 @@ public class HomeService {
         homeMemberRepository.delete(delCurrent);
     }
 
-    public List<UserDetailsResponse> getMembers(Long homeId, Long currentUserId) {
+    @Transactional(readOnly = true)
+    public Page<UserDetailsResponse> getMembers(Long homeId, Long currentUserId, Pageable pageable) {
         Home home = homeRepository.findById(homeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
         User currentUser = userRepository.findById(currentUserId)
@@ -201,16 +190,14 @@ public class HomeService {
             throw new AccessDeniedException("You don't have permission to view this home");
         }
 
-        List<HomeMember> members = homeMemberRepository.findAllByHome(home);
-
-        List<UserDetailsResponse> result = members.stream()
+        Page<UserDetailsResponse> response = homeMemberRepository.findAllByHome(home, pageable)
                 .map(HomeMember::getUser)
-                .map(UserDetailsResponse::from)
-                .toList();
+                .map(UserDetailsResponse::from);
 
-        return result;
+        return response;
     }
 
+    @Transactional
     public void changeOwner(Long homeId, Long currentUserId, String newOwnerUsername) {
         Home home = homeRepository.findById(homeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Home not found"));

@@ -44,7 +44,7 @@ public class MediaService {
     }
 
     @Transactional
-    public Media uploadMedia(MultipartFile file, Long homeId, Long userId) {
+    public MediaResponse uploadMedia(MultipartFile file, Long homeId, Long userId) {
         User currentUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Home home = homeRepository.findById(homeId)
@@ -85,7 +85,8 @@ public class MediaService {
             home.setTotalSizeInBytes(newSize);
 
             homeRepository.save(home);
-            return mediaRepository.save(newMedia);
+            mediaRepository.save(newMedia);
+            return MediaResponse.from(newMedia);
 
         } catch (IOException e) {
             throw new RuntimeException("Failed to upload file", e);
