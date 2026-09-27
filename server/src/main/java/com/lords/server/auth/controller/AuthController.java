@@ -10,9 +10,16 @@ import com.lords.server.auth.entity.User;
 import com.lords.server.auth.service.AuthService;
 import com.lords.server.security.CurrentUser;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.net.URI;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -27,7 +34,8 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest request) {
         authService.registerUser(request);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        URI location = URI.create("/api/v1/auth/login");
+        return ResponseEntity.status(HttpStatus.CREATED).location(location).build();
     }
 
     @PostMapping("/login")
@@ -50,6 +58,13 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<UserDetailsResponse> getCurrentUser(@CurrentUser User currentUser) {
-        return ResponseEntity.status(HttpStatus.OK).body(new UserDetailsResponse(currentUser.getId(), currentUser.getUsername()));
+        return ResponseEntity.status(HttpStatus.OK).body(UserDetailsResponse.from(currentUser));
+    }
+
+    @GetMapping("/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<UserDetailsResponse>> getAllUsers(@PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
+        Page<UserDetailsResponse> response = authService.getAllUsers(pageable);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }

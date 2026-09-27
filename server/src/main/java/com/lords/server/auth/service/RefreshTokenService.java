@@ -3,9 +3,11 @@ package com.lords.server.auth.service;
 import com.lords.server.auth.entity.RefreshToken;
 import com.lords.server.auth.entity.User;
 import com.lords.server.auth.repository.RefreshTokenRepository;
+import com.lords.server.exception.custom.InvalidRefreshTokenException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -23,6 +25,8 @@ public class RefreshTokenService {
     public RefreshTokenService(RefreshTokenRepository repository) {
         this.repository = repository;
     }
+
+    @Transactional
     public RefreshToken create(User user) {
 
         Optional<RefreshToken> existingToken = repository.findByUser(user);
@@ -41,19 +45,21 @@ public class RefreshTokenService {
         return repository.save(newToken);
     }
 
+    @Transactional
     public String validate(String token) {
         RefreshToken refreshToken = repository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
+                .orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
 
         if (refreshToken.getExpiresAt().isBefore(Instant.now())) {
             repository.delete(refreshToken);
-            throw new RuntimeException("Refresh token expired");
+            throw new InvalidRefreshTokenException("Refresh token expired");
         }
 
         return refreshToken.getUser().getUsername();
 
     }
 
+    @Transactional
     public void deleteToken(String token) {
         RefreshToken refreshToken = repository.findByToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid refresh token"));

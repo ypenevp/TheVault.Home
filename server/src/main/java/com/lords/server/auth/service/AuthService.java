@@ -8,11 +8,15 @@ import com.lords.server.auth.entity.RefreshToken;
 import com.lords.server.auth.entity.Role;
 import com.lords.server.auth.entity.User;
 import com.lords.server.auth.repository.UserRepository;
+import com.lords.server.exception.custom.DuplicateResourceException;
+import com.lords.server.exception.custom.InvalidCredentialsException;
 import com.lords.server.exception.custom.ResourceNotFoundException;
 import com.lords.server.security.JwtUtil;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
@@ -29,10 +33,11 @@ public class AuthService {
         this.refreshTokenService = refreshTokenService;
     }
 
+    @Transactional
     public void registerUser(RegisterRequest request) {
 
         if (userRepository.findByUsername(request.username()).isPresent()) {
-            throw new IllegalStateException("Username already exists.");
+            throw new DuplicateResourceException("Username already exists");
         }
 
         String hashedPassword = passwordEncoder.encode(request.password());
@@ -45,13 +50,13 @@ public class AuthService {
         userRepository.save(user);
     }
 
+    @Transactional(readOnly = true)
     public AuthResponse loginUser(LoginRequest request) {
 
-        User user = userRepository.findByUsername(request.username())
-                .orElseThrow(() -> new ResourceNotFoundException("Invalid username."));
+        User user = userRepository.findByUsername(request.username()).orElse(null);
 
-        if(!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new IllegalStateException("Invalid password.");
+        if (user == null || !passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new InvalidCredentialsException("Invalid username or password");
         }
 
         String accessToken = jwtUtil.generateToken(user.getUsername());
@@ -61,6 +66,7 @@ public class AuthService {
         return new AuthResponse(accessToken, refreshToken.getToken());
     }
 
+    @Transactional
     public AuthResponse refresh(String refreshToken) {
         String username = refreshTokenService.validate(refreshToken);
 
@@ -73,8 +79,14 @@ public class AuthService {
         return new AuthResponse(newAccessToken, newRefreshToken.getToken());
     }
 
+    @Transactional
     public void logoutUser(String refreshToken) {
         refreshTokenService.deleteToken(refreshToken);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UserDetailsResponse> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable).map(UserDetailsResponse::from);
     }
 
 }

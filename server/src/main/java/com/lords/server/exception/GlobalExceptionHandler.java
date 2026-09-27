@@ -1,22 +1,16 @@
 package com.lords.server.exception;
 
-import com.lords.server.exception.custom.AccessDeniedException;
-import com.lords.server.exception.custom.DuplicateResourceException;
-import com.lords.server.exception.custom.MaxUploadSizeExceededException;
-import com.lords.server.exception.custom.ResourceNotFoundException;
+import com.lords.server.exception.custom.*;
 import com.lords.server.exception.dto.GeneralErrorResponse;
 import com.lords.server.exception.dto.ValidationErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.security.core.AuthenticationException;
-
 import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -102,6 +96,12 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.FORBIDDEN, ex.getMessage(), req.getRequestURI());
     }
 
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<GeneralErrorResponse> handleInvalidRefreshToken(
+            InvalidRefreshTokenException ex, HttpServletRequest req) {
+        log.warn("Invalid refresh token: {}", ex.getMessage());
+        return buildError(HttpStatus.UNAUTHORIZED, ex.getMessage(), req.getRequestURI());
+    }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<GeneralErrorResponse> handleMaxSizeReached(MaxUploadSizeExceededException ex, HttpServletRequest req) {
@@ -114,5 +114,12 @@ public class GlobalExceptionHandler {
             InvalidMediaTypeException ex, HttpServletRequest req) {
         log.warn("Invalid media type: {}", ex.getMessage());
         return buildError(HttpStatus.BAD_REQUEST, ex.getMessage(), req.getRequestURI());
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<GeneralErrorResponse> handleInvalidCredentials(
+            InvalidCredentialsException ex, HttpServletRequest req) {
+        log.warn("Invalid credentials");
+        return buildError(HttpStatus.UNAUTHORIZED,  ex.getMessage(), req.getRequestURI());
     }
 }
