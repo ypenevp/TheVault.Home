@@ -52,6 +52,13 @@ public class HomeController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @GetMapping("/my")
+    public ResponseEntity<Page<HomeResponse>> getMyHomes(@CurrentUser User currentUser,
+        @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
+        Page<HomeResponse> response = homeService.getHomes(currentUser.getId(), pageable);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
     @PatchMapping("/{homeId}")
     public ResponseEntity<HomeResponse> updateHome(@PathVariable Long homeId, @Valid @RequestBody HomeUpdateRequest request, @CurrentUser User currentUser) {
         HomeResponse response = homeService.updateHome(homeId, currentUser.getId(), request);

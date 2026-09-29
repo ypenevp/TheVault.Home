@@ -15,6 +15,7 @@ import com.lords.server.home.repository.HomeMemberRepository;
 import com.lords.server.home.repository.HomeRepository;
 import com.lords.server.media.entity.Media;
 import com.lords.server.media.repository.MediaRepository;
+import com.lords.server.security.CurrentUser;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -71,6 +72,11 @@ public class HomeService {
 
         return HomeResponse.from(home);
     }
+    public Page<HomeResponse> getHomes(Long currentUserId, Pageable pageable) {
+        return homeRepository.findAllHomesByUser(currentUserId, pageable)
+                .map(HomeResponse::from);
+    }
+
 
     @Transactional
     public HomeResponse updateHome(Long homeId, Long currentUserId, HomeUpdateRequest request) {
