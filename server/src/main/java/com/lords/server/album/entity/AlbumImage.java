@@ -4,6 +4,8 @@ import com.lords.server.media.entity.Media;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Getter
@@ -17,6 +19,7 @@ public class AlbumImage {
 
     @ManyToOne
     @JoinColumn(name = "album_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Album album;
 
     @ManyToOne

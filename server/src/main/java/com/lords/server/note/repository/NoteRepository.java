@@ -15,4 +15,5 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
     Page<Note> findAllByHomeAndIsPublicTrue(Home home, Pageable pageable);
 
     Page<Note> findAllByWriter(User user, Pageable pageable);
+    void deleteAllByHome(Home home);
 }

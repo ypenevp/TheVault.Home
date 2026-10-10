@@ -4,6 +4,8 @@ import com.lords.server.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDate;
 
@@ -18,6 +20,7 @@ public class HomeMember {
 
     @ManyToOne
     @JoinColumn(name = "home_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Home home;
 
     @ManyToOne

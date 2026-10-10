@@ -15,7 +15,7 @@ import com.lords.server.home.repository.HomeMemberRepository;
 import com.lords.server.home.repository.HomeRepository;
 import com.lords.server.media.entity.Media;
 import com.lords.server.media.repository.MediaRepository;
-import com.lords.server.security.CurrentUser;
+import com.lords.server.note.repository.NoteRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -34,13 +34,15 @@ public class HomeService {
 
     private final HomeMemberRepository homeMemberRepository;
 
+    private final NoteRepository noteRepository;
     private final MediaRepository mediaRepository;
 
-    public HomeService(HomeRepository homeRepository, UserRepository userRepository,  HomeMemberRepository homeMemberRepository,  MediaRepository mediaRepository) {
+    public HomeService(HomeRepository homeRepository, UserRepository userRepository, HomeMemberRepository homeMemberRepository, MediaRepository mediaRepository, NoteRepository noteRepository) {
         this.homeRepository = homeRepository;
         this.userRepository = userRepository;
         this.homeMemberRepository = homeMemberRepository;
         this.mediaRepository = mediaRepository;
+        this.noteRepository = noteRepository;
     }
 
     @Transactional
@@ -126,7 +128,7 @@ public class HomeService {
             }
         }
 
-        homeMemberRepository.deleteAllByHome(home);
+        noteRepository.deleteAllByHome(home);
         mediaRepository.deleteAllByHome(home);
         homeRepository.delete(home);
     }
