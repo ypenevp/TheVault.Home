@@ -46,7 +46,7 @@ public class RefreshTokenService {
     }
 
     @Transactional
-    public String validate(String token) {
+    public Long validate(String token) {
         RefreshToken refreshToken = repository.findByToken(token)
                 .orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
 
@@ -55,7 +55,7 @@ public class RefreshTokenService {
             throw new InvalidRefreshTokenException("Refresh token expired");
         }
 
-        return refreshToken.getUser().getUsername();
+        return refreshToken.getUser().getId();
 
     }
 

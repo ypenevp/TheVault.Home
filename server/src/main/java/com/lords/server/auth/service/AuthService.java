@@ -59,7 +59,7 @@ public class AuthService {
             throw new InvalidCredentialsException("Invalid username or password");
         }
 
-        String accessToken = jwtUtil.generateToken(user.getUsername());
+        String accessToken = jwtUtil.generateToken(user.getId(), user.getRole().name());
 
         RefreshToken refreshToken = refreshTokenService.create(user);
 
@@ -68,12 +68,12 @@ public class AuthService {
 
     @Transactional
     public AuthResponse refresh(String refreshToken) {
-        String username = refreshTokenService.validate(refreshToken);
+        Long userId = refreshTokenService.validate(refreshToken);
 
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        String newAccessToken = jwtUtil.generateToken(user.getUsername());
+        String newAccessToken = jwtUtil.generateToken(user.getId(), user.getRole().name());
         RefreshToken newRefreshToken = refreshTokenService.create(user);
 
         return new AuthResponse(newAccessToken, newRefreshToken.getToken());
@@ -82,6 +82,13 @@ public class AuthService {
     @Transactional
     public void logoutUser(String refreshToken) {
         refreshTokenService.deleteToken(refreshToken);
+    }
+
+    @Transactional(readOnly = true)
+    public UserDetailsResponse getCurrentUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return UserDetailsResponse.from(user);
     }
 
     @Transactional(readOnly = true)

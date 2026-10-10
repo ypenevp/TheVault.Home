@@ -13,7 +13,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface NoteRepository extends JpaRepository<Note, Long> {
 
     Page<Note> findAllByHomeAndIsPublicTrue(Home home, Pageable pageable);
-
+    Page<Note> findAllByWriterId(Long writerId, Pageable pageable);
     Page<Note> findAllByWriter(User user, Pageable pageable);
     void deleteAllByHome(Home home);
 }

@@ -1,7 +1,6 @@
 package com.lords.server.home.controller;
 
 import com.lords.server.auth.dto.response.UserDetailsResponse;
-import com.lords.server.auth.entity.User;
 import com.lords.server.home.dto.request.CreateHomeRequest;
 import com.lords.server.home.dto.request.HomeUpdateRequest;
 import com.lords.server.home.dto.request.HomeUpdateStorage;
@@ -40,66 +39,65 @@ public class HomeController {
     }
 
     @PostMapping
-    public ResponseEntity<HomeResponse> createHome(@Valid @RequestBody CreateHomeRequest request, @CurrentUser User currentUser) {
-        HomeResponse response = homeService.createHome(request.name(), currentUser.getId());
+    public ResponseEntity<HomeResponse> createHome(@Valid @RequestBody CreateHomeRequest request, @CurrentUser Long userId) {
+        HomeResponse response = homeService.createHome(request.name(), userId);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(response.id()).toUri();
         return ResponseEntity.status(HttpStatus.CREATED).location(location).body(response);
     }
 
     @GetMapping("/{homeId}")
-    public ResponseEntity<HomeResponse> getHomeDetails(@PathVariable Long homeId, @CurrentUser User currentUser) {
-        HomeResponse response = homeService.getHome(homeId, currentUser.getId());
+    public ResponseEntity<HomeResponse> getHomeDetails(@PathVariable Long homeId, @CurrentUser Long userId) {
+        HomeResponse response = homeService.getHome(homeId, userId);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @GetMapping("/my")
-    public ResponseEntity<Page<HomeResponse>> getMyHomes(@CurrentUser User currentUser,
-        @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
-        Page<HomeResponse> response = homeService.getHomes(currentUser.getId(), pageable);
+    public ResponseEntity<Page<HomeResponse>> getMyHomes(@CurrentUser Long userId,
+                                                         @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
+        Page<HomeResponse> response = homeService.getHomes(userId, pageable);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @PatchMapping("/{homeId}")
-    public ResponseEntity<HomeResponse> updateHome(@PathVariable Long homeId, @Valid @RequestBody HomeUpdateRequest request, @CurrentUser User currentUser) {
-        HomeResponse response = homeService.updateHome(homeId, currentUser.getId(), request);
+    public ResponseEntity<HomeResponse> updateHome(@PathVariable Long homeId, @Valid @RequestBody HomeUpdateRequest request, @CurrentUser Long userId) {
+        HomeResponse response = homeService.updateHome(homeId, userId, request);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @PatchMapping("/{homeId}/storage")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<HomeResponse> updateHomeStorage(@PathVariable Long homeId, @Valid @RequestBody HomeUpdateStorage request, @CurrentUser User currentUser) {
-        HomeResponse response = homeService.updateStorage(homeId, currentUser.getId(), request);
+    public ResponseEntity<HomeResponse> updateHomeStorage(@PathVariable Long homeId, @Valid @RequestBody HomeUpdateStorage request, @CurrentUser Long userId) {
+        HomeResponse response = homeService.updateStorage(homeId, userId, request);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @DeleteMapping("/{homeId}")
-    public ResponseEntity<Void> deleteHome(@PathVariable Long homeId, @CurrentUser User currentUser) {
-        homeService.deleteHome(homeId, currentUser.getId());
+    public ResponseEntity<Void> deleteHome(@PathVariable Long homeId, @CurrentUser Long userId) {
+        homeService.deleteHome(homeId, userId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @PostMapping("/{homeId}/members")
-    public ResponseEntity<Void> addMember(@PathVariable Long homeId, @Valid @RequestBody ManageMemberRequest request, @CurrentUser User currentUser) {
-        homeService.addMember(homeId, currentUser.getId(), request.username());
+    public ResponseEntity<Void> addMember(@PathVariable Long homeId, @Valid @RequestBody ManageMemberRequest request, @CurrentUser Long userId) {
+        homeService.addMember(homeId, userId, request.username());
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @DeleteMapping("/{homeId}/members")
-    public ResponseEntity<Void> kickMember(@PathVariable Long homeId, @Valid @RequestBody ManageMemberRequest request, @CurrentUser User currentUser) {
-        homeService.kickMember(homeId, currentUser.getId(), request.username());
+    public ResponseEntity<Void> kickMember(@PathVariable Long homeId, @Valid @RequestBody ManageMemberRequest request, @CurrentUser Long userId) {
+        homeService.kickMember(homeId, userId, request.username());
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @GetMapping("/{homeId}/members")
-    public ResponseEntity<Page<UserDetailsResponse>> viewHomeMembers(@PathVariable Long homeId, @CurrentUser User currentUser,
-        @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
-        Page<UserDetailsResponse> response = homeService.getMembers(homeId, currentUser.getId(), pageable);
+    public ResponseEntity<Page<UserDetailsResponse>> viewHomeMembers(@PathVariable Long homeId, @CurrentUser Long userId, @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
+        Page<UserDetailsResponse> response = homeService.getMembers(homeId, userId, pageable);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @PatchMapping("/{homeId}/owner")
-    public ResponseEntity<Void> changeOwner(@PathVariable Long homeId, @Valid @RequestBody ManageMemberRequest request, @CurrentUser User currentUser) {
-        homeService.changeOwner(homeId, currentUser.getId(), request.username());
+    public ResponseEntity<Void> changeOwner(@PathVariable Long homeId, @Valid @RequestBody ManageMemberRequest request, @CurrentUser Long userId) {
+        homeService.changeOwner(homeId, userId, request.username());
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 

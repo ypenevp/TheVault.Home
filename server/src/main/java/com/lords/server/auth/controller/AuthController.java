@@ -6,7 +6,6 @@ import com.lords.server.auth.dto.request.RefreshTokenRequest;
 import com.lords.server.auth.dto.request.RegisterRequest;
 import com.lords.server.auth.dto.response.AuthResponse;
 import com.lords.server.auth.dto.response.UserDetailsResponse;
-import com.lords.server.auth.entity.User;
 import com.lords.server.auth.service.AuthService;
 import com.lords.server.security.CurrentUser;
 import jakarta.validation.Valid;
@@ -57,8 +56,9 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserDetailsResponse> getCurrentUser(@CurrentUser User currentUser) {
-        return ResponseEntity.status(HttpStatus.OK).body(UserDetailsResponse.from(currentUser));
+    public ResponseEntity<UserDetailsResponse> getCurrentUser(@CurrentUser Long userId) {
+        UserDetailsResponse response = authService.getCurrentUser(userId);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @GetMapping("/users")

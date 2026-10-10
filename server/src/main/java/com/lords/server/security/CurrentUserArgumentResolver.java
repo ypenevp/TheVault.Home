@@ -1,8 +1,5 @@
 package com.lords.server.security;
 
-import com.lords.server.auth.entity.User;
-import com.lords.server.auth.repository.UserRepository;
-import com.lords.server.exception.custom.ResourceNotFoundException;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
@@ -16,19 +13,17 @@ import java.security.Principal;
 @Component
 public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolver {
 
-    private final UserRepository userRepository;
-
-    public CurrentUserArgumentResolver(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
-        return parameter.hasParameterAnnotation(CurrentUser.class) && parameter.getParameterType().equals(User.class);
+        return parameter.hasParameterAnnotation(CurrentUser.class)
+                && parameter.getParameterType().equals(Long.class);
     }
 
     @Override
-    public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
+    public Object resolveArgument(MethodParameter parameter,
+                                  ModelAndViewContainer mavContainer,
+                                  NativeWebRequest webRequest,
+                                  WebDataBinderFactory binderFactory) {
 
         Principal principal = webRequest.getUserPrincipal();
 
@@ -39,8 +34,6 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
         }
 
         Authentication authentication = (Authentication) principal;
-
-        return userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return authentication.getPrincipal(); // userId
     }
 }

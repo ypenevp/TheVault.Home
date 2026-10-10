@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -65,15 +66,15 @@ public class HomeService {
     public HomeResponse getHome(Long homeId, Long currentUserId) {
         Home home = homeRepository.findById(homeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
-        User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (!home.getOwner().getId().equals(currentUser.getId()) && !homeMemberRepository.existsByHomeAndUser(home, currentUser)){
+        if (!home.getOwner().getId().equals(currentUserId)
+                && !homeMemberRepository.existsByHomeIdAndUserId(homeId, currentUserId)) {
             throw new AccessDeniedException("You don't have permission to view this home");
         }
 
         return HomeResponse.from(home);
     }
+    @Transactional(readOnly = true)
     public Page<HomeResponse> getHomes(Long currentUserId, Pageable pageable) {
         return homeRepository.findAllHomesByUser(currentUserId, pageable)
                 .map(HomeResponse::from);
@@ -84,16 +85,13 @@ public class HomeService {
     public HomeResponse updateHome(Long homeId, Long currentUserId, HomeUpdateRequest request) {
         Home home = homeRepository.findById(homeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
-        User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (!home.getOwner().getId().equals(currentUser.getId())) {
+        if (!home.getOwner().getId().equals(currentUserId)) {
             throw new AccessDeniedException("You don't have permission to edit this home");
         }
 
         home.setName(request.name());
-        Home saved = homeRepository.save(home);
-        return HomeResponse.from(saved);
+        return HomeResponse.from(home);
     }
 
     @Transactional
@@ -102,18 +100,15 @@ public class HomeService {
                 .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
 
         home.setMaxSizeInBytes(request.newStorage());
-        Home saved = homeRepository.save(home);
-        return HomeResponse.from(saved);
+        return HomeResponse.from(home);
     }
 
     @Transactional
     public void deleteHome(Long homeId, Long currentUserId) {
         Home home = homeRepository.findById(homeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
-        User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (!home.getOwner().getId().equals(currentUser.getId())) {
+        if (!home.getOwner().getId().equals(currentUserId)) {
             throw new AccessDeniedException("You don't have permission to Delete this home");
         }
 
@@ -124,7 +119,7 @@ public class HomeService {
                 Path filePath = Path.of(media.getPath());
                 Files.deleteIfExists(filePath);
             } catch (IOException e) {
-                throw new RuntimeException("Failed to delete media file: " + media.getPath(), e);
+                throw new UncheckedIOException("Failed to delete media file: " + media.getPath(), e);
             }
         }
 
@@ -135,14 +130,11 @@ public class HomeService {
 
     @Transactional
     public void addMember(Long homeId, Long currentUserId, String usernameToAdd) {
-
         Home home = homeRepository.findById(homeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
-        User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (!home.getOwner().getId().equals(currentUser.getId())) {
-            throw new AccessDeniedException("You don't have permission to add members to this home");
+        if (!home.getOwner().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("You don't have permission to add members");
         }
 
         User newMember = userRepository.findByUsername(usernameToAdd)
@@ -153,26 +145,22 @@ public class HomeService {
         }
 
         if (homeMemberRepository.existsByHomeAndUser(home, newMember)) {
-            throw new DuplicateResourceException("User is already a member of this home");
+            throw new DuplicateResourceException("User is already a member");
         }
 
         HomeMember member = new HomeMember();
         member.setHome(home);
         member.setUser(newMember);
-
         homeMemberRepository.save(member);
     }
 
     @Transactional
     public void kickMember(Long homeId, Long currentUserId, String usernameToDelete) {
-
         Home home = homeRepository.findById(homeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
-        User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (!home.getOwner().getId().equals(currentUser.getId())) {
-            throw new AccessDeniedException("You don't have permission to kick members from this home");
+        if (!home.getOwner().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("You don't have permission to kick members");
         }
 
         User delMember = userRepository.findByUsername(usernameToDelete)
@@ -182,7 +170,8 @@ public class HomeService {
             throw new AccessDeniedException("Owner cannot be kicked");
         }
 
-        HomeMember delCurrent = homeMemberRepository.findByHomeAndUser(home, delMember).orElseThrow(() -> new ResourceNotFoundException("Member not found"));
+        HomeMember delCurrent = homeMemberRepository.findByHomeAndUser(home, delMember)
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
 
         homeMemberRepository.delete(delCurrent);
     }
@@ -191,38 +180,39 @@ public class HomeService {
     public Page<UserDetailsResponse> getMembers(Long homeId, Long currentUserId, Pageable pageable) {
         Home home = homeRepository.findById(homeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
-        User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (!home.getOwner().getId().equals(currentUser.getId()) && !homeMemberRepository.existsByHomeAndUser(home, currentUser)){
+        if (!home.getOwner().getId().equals(currentUserId)
+                && !homeMemberRepository.existsByHomeIdAndUserId(homeId, currentUserId)) {
             throw new AccessDeniedException("You don't have permission to view this home");
         }
 
-        Page<UserDetailsResponse> response = homeMemberRepository.findAllByHome(home, pageable)
+        return homeMemberRepository.findAllByHome(home, pageable)
                 .map(HomeMember::getUser)
                 .map(UserDetailsResponse::from);
-
-        return response;
     }
 
     @Transactional
     public void changeOwner(Long homeId, Long currentUserId, String newOwnerUsername) {
         Home home = homeRepository.findById(homeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Home not found"));
-        User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        if (!home.getOwner().getId().equals(currentUser.getId())) {
+
+        if (!home.getOwner().getId().equals(currentUserId)) {
             throw new AccessDeniedException("Only the current owner can transfer ownership");
         }
 
-        User newOwner = userRepository.findByUsername(newOwnerUsername).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        User newOwner = userRepository.findByUsername(newOwnerUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if(homeMemberRepository.existsByHomeAndUser(home, newOwner)) {
-            HomeMember newOwnerMember = homeMemberRepository.findByHomeAndUser(home,newOwner).orElseThrow(() -> new ResourceNotFoundException("Member not found"));
+        if (homeMemberRepository.existsByHomeAndUser(home, newOwner)) {
+            HomeMember newOwnerMember = homeMemberRepository.findByHomeAndUser(home, newOwner)
+                    .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
             homeMemberRepository.delete(newOwnerMember);
         }
+
         home.setOwner(newOwner);
-        homeRepository.save(home);
+
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         HomeMember member = new HomeMember();
         member.setHome(home);

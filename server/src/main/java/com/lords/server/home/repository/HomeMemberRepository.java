@@ -16,6 +16,7 @@ public interface HomeMemberRepository extends JpaRepository<HomeMember, Long> {
 
     Page<HomeMember> findAllByHome(Home home, Pageable pageable);
 
+    boolean existsByHomeIdAndUserId(Long homeId, Long userId);
     void deleteAllByHome(Home home);
 
 
